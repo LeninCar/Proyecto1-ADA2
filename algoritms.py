@@ -34,7 +34,7 @@ def calcular_esfuerzo(agentes, estrategia):
             esfuerzo += abs(opinion) * (1 - receptividad)
     return esfuerzo
 
-
+# Algoritmo de fuerza bruta
 def fuerza_bruta_modex(agentes, R_max):
     n = len(agentes)
     mejor_estrategia = None
