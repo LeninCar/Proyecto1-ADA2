@@ -133,10 +133,10 @@ def cargar_archivo():
             
             # Mostrar la mejor estrategia y resultados de la moderación en el área de texto de resultados
             texto_resultados.delete(1.0, tk.END)  # Limpiar área de texto de resultados
-            texto_resultados.insert(tk.END, "Mejor Estrategia:\n")
-            texto_resultados.insert(tk.END, f"{mejor_estrategia}\n")
-            texto_resultados.insert(tk.END, f"Menor Extremismo Alcanzado: {menor_extremismo:.3f}\n")
+            texto_resultados.insert(tk.END, f"Menor Extremismo Alcanzado: {menor_extremismo:.3f}\n\n")
             texto_resultados.insert(tk.END, f"Esfuerzo Utilizado: {esfuerzo_total}\n\n")
+            texto_resultados.insert(tk.END, "Mejor Estrategia:\n")
+            texto_resultados.insert(tk.END, f"{mejor_estrategia}\n\n")
 
             texto_resultados.insert(tk.END, "Agentes Moderados:\n")
             for idx, (op, rec) in enumerate(agentes_moderados_final):
