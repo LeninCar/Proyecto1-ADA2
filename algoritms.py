@@ -23,8 +23,7 @@ def leer_red_social(archivo):
 
 # Función para calcular el nivel de extremismo
 def calcular_extremismo(agentes):
-    return math.sqrt(sum(opinion ** 2 for opinion, _ in agentes))/ len(agentes)
-
+    return math.sqrt(sum(opinion ** 2 for opinion, _ in agentes)) / len(agentes)
 
 # Función para calcular el esfuerzo de moderar las opiniones
 def calcular_esfuerzo(agentes, estrategia):
@@ -39,11 +38,9 @@ def fuerza_bruta_modex(agentes, R_max):
     n = len(agentes)
     mejor_estrategia = None
     mejor_extremismo = float('inf')
+    mejor_red = None
 
     for estrategia in product([0, 1], repeat=n):
-        # Imprimir la estrategia actual
-        # print(f"Estrategia: {estrategia}")
-        # print("==========================================")
         nueva_red = [(0 if estrategia[i] == 1 else opinion, receptividad) 
                       for i, (opinion, receptividad) in enumerate(agentes)]
         
@@ -53,8 +50,9 @@ def fuerza_bruta_modex(agentes, R_max):
             if extremismo < mejor_extremismo:
                 mejor_extremismo = extremismo
                 mejor_estrategia = estrategia
+                mejor_red = nueva_red  # Guardar la nueva red con la mejor estrategia
 
-    return mejor_estrategia, mejor_extremismo, calcular_esfuerzo(agentes, mejor_estrategia)
+    return mejor_estrategia, mejor_extremismo, mejor_red, calcular_esfuerzo(agentes, mejor_estrategia)
 
 # Función para cargar el archivo y ejecutar el algoritmo de fuerza bruta
 def cargar_archivo():
@@ -65,7 +63,7 @@ def cargar_archivo():
     if archivo:
         agentes, esfuerzo_max = leer_red_social(archivo)
         if agentes is not None:
-            mejor_estrategia, menor_extremismo, agentes_moderados_final = fuerza_bruta_modex(agentes, esfuerzo_max)
+            mejor_estrategia, menor_extremismo, agentes_moderados_final, _ = fuerza_bruta_modex(agentes, esfuerzo_max)
             
             # Mostrar detalles del archivo y resultados en el área de texto principal
             texto_principal.delete(1.0, tk.END)  # Limpiar área de texto principal
@@ -80,7 +78,7 @@ def cargar_archivo():
             texto_resultados.delete(1.0, tk.END)  # Limpiar área de texto de resultados
             texto_resultados.insert(tk.END, "Mejor Estrategia:\n")
             texto_resultados.insert(tk.END, f"{mejor_estrategia}\n")
-            texto_resultados.insert(tk.END, f"Menor Extremismo Alcanzado: {menor_extremismo:.2f}\n\n")
+            texto_resultados.insert(tk.END, f"Menor Extremismo Alcanzado: {menor_extremismo:.3f}\n\n")
 
             texto_resultados.insert(tk.END, "Agentes Moderados:\n")
             for idx, (op, rec) in enumerate(agentes_moderados_final):
