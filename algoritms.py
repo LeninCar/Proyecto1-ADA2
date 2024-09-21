@@ -106,6 +106,43 @@ def programacion_dinamica_modex(agentes, R_max):
 
     return estrategia_optima, menor_extremismo, nueva_red
 
+def voraz_modex(agentes, R_max):
+    n = len(agentes)
+    
+    # Lista para almacenar los esfuerzos y el impacto de cada agente
+    impacto_por_esfuerzo = []
+    
+    for i, (opinion, receptividad) in enumerate(agentes):
+        esfuerzo = calcular_esfuerzo_individual(opinion, receptividad)
+        impacto = opinion ** 2  # Impacto es el cuadrado de la opinión
+        if esfuerzo > 0:
+            impacto_por_esfuerzo.append((impacto / esfuerzo, esfuerzo, impacto, i))
+    
+    # Ordenar los agentes por la mejor relación impacto/esfuerzo de mayor a menor
+    impacto_por_esfuerzo.sort(reverse=True, key=lambda x: x[0])
+    
+    esfuerzo_usado = 0
+    suma_cuadrados = 0
+    estrategia_optima = [0] * n  # Estrategia de moderación (1 si moderado, 0 si no)
+    
+    # Moderar los agentes mientras no excedamos el esfuerzo máximo
+    for impacto_por_esf, esfuerzo, impacto, i in impacto_por_esfuerzo:
+        if esfuerzo_usado + esfuerzo <= R_max:
+            estrategia_optima[i] = 1  # Moderamos al agente
+            esfuerzo_usado += esfuerzo
+            # No agregamos el impacto de este agente ya que fue moderado (opinión 0)
+        else:
+            suma_cuadrados += impacto  # Agregamos el impacto si no fue moderado
+    
+    # Crear la nueva red con las opiniones actualizadas
+    nueva_red = [(0 if estrategia_optima[i] == 1 else opinion, receptividad) 
+                  for i, (opinion, receptividad) in enumerate(agentes)]
+    
+    # Calcular el menor extremismo alcanzado
+    menor_extremismo = math.sqrt(suma_cuadrados) / n
+    
+    return estrategia_optima, menor_extremismo, nueva_red
+
 # Función para cargar el archivo y ejecutar el algoritmo seleccionado
 def cargar_archivo():
     archivo = filedialog.askopenfilename(
@@ -115,11 +152,14 @@ def cargar_archivo():
     if archivo:
         agentes, esfuerzo_max = leer_red_social(archivo)
         if agentes is not None:
-            # Elegir el algoritmo a usar: Fuerza Bruta o Programación Dinámica
+            # Elegir el algoritmo a usar: Fuerza Bruta, Programación Dinámica o Voraz
             if metodo.get() == "Fuerza Bruta":
                 mejor_estrategia, menor_extremismo, agentes_moderados_final, esfuerzo_total = fuerza_bruta_modex(agentes, esfuerzo_max)
-            else:
+            elif metodo.get() == "Programación Dinámica":
                 mejor_estrategia, menor_extremismo, agentes_moderados_final = programacion_dinamica_modex(agentes, esfuerzo_max)
+                esfuerzo_total = sum(calcular_esfuerzo_individual(agentes[i][0], agentes[i][1]) for i in range(len(agentes)) if mejor_estrategia[i] == 1)
+            elif metodo.get() == "Voraz":
+                mejor_estrategia, menor_extremismo, agentes_moderados_final = voraz_modex(agentes, esfuerzo_max)
                 esfuerzo_total = sum(calcular_esfuerzo_individual(agentes[i][0], agentes[i][1]) for i in range(len(agentes)) if mejor_estrategia[i] == 1)
             
             # Mostrar detalles del archivo y resultados en el área de texto principal
@@ -133,6 +173,7 @@ def cargar_archivo():
             
             # Mostrar la mejor estrategia y resultados de la moderación en el área de texto de resultados
             texto_resultados.delete(1.0, tk.END)  # Limpiar área de texto de resultados
+            texto_resultados.insert(tk.END, f"Menor Extremismo Alcanzado: {menor_extremismo:.3f}\n")
             texto_resultados.insert(tk.END, "Mejor Estrategia:\n")
             texto_resultados.insert(tk.END, f"{mejor_estrategia}\n")
             texto_resultados.insert(tk.END, f"Menor Extremismo Alcanzado: {menor_extremismo:.3f}\n")
@@ -155,7 +196,7 @@ frame_boton.pack(pady=20)
 
 # Opción para seleccionar método de resolución
 metodo = tk.StringVar(value="Programación Dinámica")  # Valor por defecto
-opciones_metodo = tk.OptionMenu(frame_boton, metodo, "Fuerza Bruta", "Programación Dinámica")
+opciones_metodo = tk.OptionMenu(frame_boton, metodo, "Fuerza Bruta", "Programación Dinámica", "Voraz")
 opciones_metodo.pack(side=tk.LEFT, padx=10)
 
 # Botón para cargar el archivo
