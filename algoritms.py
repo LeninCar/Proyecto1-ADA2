@@ -1,7 +1,9 @@
 import tkinter as tk
-from tkinter import filedialog, messagebox
+from tkinter import ttk,filedialog, messagebox
 import math
 from itertools import product
+import time  # Importar el módulo time para medir el tiempo de ejecución
+
 
 # Función para leer el archivo de la red social
 def leer_red_social(archivo):
@@ -143,24 +145,49 @@ def voraz_modex(agentes, R_max):
     
     return estrategia_optima, menor_extremismo, nueva_red
 
+# Función para centrar la ventana
+def centrar_ventana(ventana, ancho, alto):
+    pantalla_ancho = ventana.winfo_screenwidth()
+    pantalla_alto = ventana.winfo_screenheight()
+    x = int((pantalla_ancho / 2) - (ancho / 2))
+    y = int((pantalla_alto / 2) - (alto / 2))
+    ventana.geometry(f'{ancho}x{alto}+{x}+{y}')
+
 # Función para cargar el archivo y ejecutar el algoritmo seleccionado
 def cargar_archivo():
     archivo = filedialog.askopenfilename(
         title="Selecciona el archivo de red social",
         filetypes=(("Archivos de texto", ".txt"), ("Todos los archivos", "."))
     )
+    
     if archivo:
         agentes, esfuerzo_max = leer_red_social(archivo)
         if agentes is not None:
             # Elegir el algoritmo a usar: Fuerza Bruta, Programación Dinámica o Voraz
             if metodo.get() == "Fuerza Bruta":
+                # Capturar el tiempo inicial antes de ejecutar el algoritmo
+                tiempo_inicio = time.time()
                 mejor_estrategia, menor_extremismo, agentes_moderados_final, esfuerzo_total = fuerza_bruta_modex(agentes, esfuerzo_max)
             elif metodo.get() == "Programación Dinámica":
+                # Capturar el tiempo inicial antes de ejecutar el algoritmo
+                tiempo_inicio = time.time()
                 mejor_estrategia, menor_extremismo, agentes_moderados_final = programacion_dinamica_modex(agentes, esfuerzo_max)
-                esfuerzo_total = sum(calcular_esfuerzo_individual(agentes[i][0], agentes[i][1]) for i in range(len(agentes)) if mejor_estrategia[i] == 1)
+                esfuerzo_total = sum(
+                    calcular_esfuerzo_individual(agentes[i][0], agentes[i][1]) for i in range(len(agentes)) if mejor_estrategia[i] == 1
+                )
             elif metodo.get() == "Voraz":
+                # Capturar el tiempo inicial antes de ejecutar el algoritmo
+                tiempo_inicio = time.time()
                 mejor_estrategia, menor_extremismo, agentes_moderados_final = voraz_modex(agentes, esfuerzo_max)
-                esfuerzo_total = sum(calcular_esfuerzo_individual(agentes[i][0], agentes[i][1]) for i in range(len(agentes)) if mejor_estrategia[i] == 1)
+                esfuerzo_total = sum(
+                    calcular_esfuerzo_individual(agentes[i][0], agentes[i][1]) for i in range(len(agentes)) if mejor_estrategia[i] == 1
+                )
+
+            # Capturar el tiempo final después de ejecutar el algoritmo
+            tiempo_fin = time.time()
+
+            # Calcular el tiempo de ejecución en segundos
+            tiempo_ejecucion = tiempo_fin - tiempo_inicio
             
             # Mostrar detalles del archivo y resultados en el área de texto principal
             texto_principal.delete(1.0, tk.END)  # Limpiar área de texto principal
@@ -173,13 +200,13 @@ def cargar_archivo():
             
             # Mostrar la mejor estrategia y resultados de la moderación en el área de texto de resultados
             texto_resultados.delete(1.0, tk.END)  # Limpiar área de texto de resultados
-            texto_resultados.insert(tk.END, f"Menor Extremismo Alcanzado: {menor_extremismo:.3f}\n")
-            texto_resultados.insert(tk.END, "Mejor Estrategia:\n")
-            texto_resultados.insert(tk.END, f"{mejor_estrategia}\n")
+            texto_resultados.insert(tk.END, f"Tiempo de Ejecución: {tiempo_ejecucion:.5f} segundos\n")  # Mostrar el tiempo de ejecución
             texto_resultados.insert(tk.END, f"Menor Extremismo Alcanzado: {menor_extremismo:.3f}\n")
             texto_resultados.insert(tk.END, f"Esfuerzo Utilizado: {esfuerzo_total}\n\n")
+            texto_resultados.insert(tk.END, "Mejor Estrategia:\n")
+            texto_resultados.insert(tk.END, f"{mejor_estrategia}\n")
 
-            texto_resultados.insert(tk.END, "Agentes Moderados:\n")
+            texto_resultados.insert(tk.END, f"\nAgentes Moderados:\n")
             for idx, (op, rec) in enumerate(agentes_moderados_final):
                 estado = "Moderado" if mejor_estrategia[idx] else "No moderado"
                 texto_resultados.insert(tk.END, f"Agente {idx}: Opinión = {op}, Receptividad = {rec} ({estado})\n")
@@ -187,29 +214,64 @@ def cargar_archivo():
 # Crear la ventana principal
 ventana = tk.Tk()
 ventana.title("Moderación de Extremismo en Redes Sociales (ModEx)")
-ventana.geometry("800x600")
+# Establecer las dimensiones y centrar la ventana
+ancho_ventana = 800
+alto_ventana = 600
+centrar_ventana(ventana, ancho_ventana, alto_ventana)
 ventana.resizable(True, True)
 
+# Cambiar el fondo de la ventana
+ventana.configure(bg='#f4f4f9')
+
 # Crear un marco para el botón y el selector de método
-frame_boton = tk.Frame(ventana)
-frame_boton.pack(pady=20)
+frame_boton = tk.Frame(ventana, bg='#f4f4f9')
+frame_boton.grid(row=0, column=0, pady=20)
 
 # Opción para seleccionar método de resolución
 metodo = tk.StringVar(value="Programación Dinámica")  # Valor por defecto
-opciones_metodo = tk.OptionMenu(frame_boton, metodo, "Fuerza Bruta", "Programación Dinámica", "Voraz")
+etiqueta_metodo = tk.Label(frame_boton, text="Método de Resolución:", bg='#f4f4f9', font=("Arial", 12))
+etiqueta_metodo.pack(side=tk.LEFT, padx=10)
+
+opciones_metodo = ttk.OptionMenu(frame_boton, metodo, "Programación Dinámica", "Fuerza Bruta", "Programación Dinámica", "Voraz")
 opciones_metodo.pack(side=tk.LEFT, padx=10)
 
 # Botón para cargar el archivo
-boton_cargar = tk.Button(frame_boton, text="Cargar Archivo", command=cargar_archivo, width=20, height=2)
+boton_cargar = ttk.Button(frame_boton, text="Cargar Archivo", command=cargar_archivo, width=20)
 boton_cargar.pack(side=tk.LEFT, padx=10)
 
-# Área de texto para mostrar el contenido del archivo y resultados
-texto_principal = tk.Text(ventana, wrap=tk.WORD, width=80, height=15)
-texto_principal.pack(pady=10)
+# Crear áreas de texto escalables
+ventana.grid_rowconfigure(1, weight=1)  # Permitir que el contenido del archivo se expanda
+ventana.grid_rowconfigure(2, weight=1)  # Permitir que los resultados se expandan
+ventana.grid_columnconfigure(0, weight=1)  # Hacer que la ventana sea escalable horizontalmente
+
+# Área de texto para mostrar el contenido del archivo
+frame_texto = tk.Frame(ventana, bg='#f4f4f9')
+frame_texto.grid(row=1, column=0, sticky='nsew', padx=10, pady=10)
+
+etiqueta_archivo = tk.Label(frame_texto, text="Contenido del Archivo:", bg='#f4f4f9', font=("Arial", 12))
+etiqueta_archivo.grid(row=0, column=0, sticky='w')
+
+texto_principal = tk.Text(frame_texto, wrap=tk.WORD, font=("Courier New", 10))
+texto_principal.grid(row=1, column=0, sticky='nsew')
+
+# Hacer que el área de texto se expanda
+frame_texto.grid_rowconfigure(1, weight=1)
+frame_texto.grid_columnconfigure(0, weight=1)
 
 # Área de texto para mostrar los resultados de la moderación
-texto_resultados = tk.Text(ventana, wrap=tk.WORD, width=80, height=15)
-texto_resultados.pack(pady=10)
+frame_resultados = tk.Frame(ventana, bg='#f4f4f9')
+frame_resultados.grid(row=2, column=0, sticky='nsew', padx=10, pady=10)
+
+etiqueta_resultados = tk.Label(frame_resultados, text="Resultados de la Moderación:", bg='#f4f4f9', font=("Arial", 12))
+etiqueta_resultados.grid(row=0, column=0, sticky='w')
+
+texto_resultados = tk.Text(frame_resultados, wrap=tk.WORD, font=("Courier New", 10))
+texto_resultados.grid(row=1, column=0, sticky='nsew')
+
+# Hacer que el área de texto de resultados se expanda
+frame_resultados.grid_rowconfigure(1, weight=1)
+frame_resultados.grid_columnconfigure(0, weight=1)
+
 
 # Iniciar el bucle de la interfaz
 ventana.mainloop()
