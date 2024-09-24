@@ -2,10 +2,8 @@ import tkinter as tk
 from tkinter import ttk,filedialog, messagebox
 import math
 from itertools import product
-import time  # Importar el módulo time para medir el tiempo de ejecución
+import time 
 
-
-# Función para leer el archivo de la red social
 def leer_red_social(archivo):
     """
     Lee un archivo que describe una red social y extrae la información de los agentes y el esfuerzo máximo.
@@ -22,25 +20,27 @@ def leer_red_social(archivo):
         Exception: Si ocurre un error al leer el archivo, se muestra un mensaje de error y se retorna None.
     """
     try:
+        # Se abre el archivo en modo lectura
         with open(archivo, 'r') as f:
-            n = int(f.readline().strip())  # Número de agentes
-            agentes = []
+            n = int(f.readline().strip())  # Se lee el número de agentes
+            agentes = [] # Se inicializa la lista de agentes
+            # Se recorre cada agente y se lee su opinión y receptividad
             for _ in range(n):
-                linea = f.readline().strip()
+                linea = f.readline().strip() # Se lee la línea del archivo
                 if not linea:
                     continue  # Salta líneas vacías
-                opinion, receptividad = map(float, linea.split(','))
-                agentes.append((opinion, receptividad))
-            esfuerzo_max = int(f.readline().strip())  # Esfuerzo máximo
-        return agentes, esfuerzo_max
+                opinion, receptividad = map(float, linea.split(',')) # Se extraen los valores de opinión y receptividad
+                agentes.append((opinion, receptividad))  # Se añade el agente a la lista
+            esfuerzo_max = int(f.readline().strip())  # Se lee el esfuerzo máximo permitido
+        return agentes, esfuerzo_max # Se devuelven los agentes y el esfuerzo máximo
     except Exception as e:
+        # Se muestra un mensaje de error si ocurre algún problema al leer el archivo
         messagebox.showerror("Error", f"Error al leer el archivo: {e}")
-        return None, None
+        return None, None  # Se retorna valores nulos si hay un error
 
-# Función para calcular el nivel de extremismo
 def calcular_extremismo(agentes):
     """
-    Calcula el nivel de extremismo de una red de agentes.
+    Calcula el nivel de extremismo basado en las opiniones de los agentes.
 
     Args:
         agentes (list of tuple): Una lista de tuplas donde cada tupla representa un agente con su opinión y esfuerzo.
@@ -53,18 +53,20 @@ def calcular_extremismo(agentes):
         ValueError: Si el formato de los agentes no es válido.
     """
     if not agentes:
-        return 0  # Evitar división por cero
+        return 0  # Evitar división por cero si no existen agentes.
     
     try:
+        # Calculamos el extremismo con la fórmula planteada en el proyecto
         return math.sqrt(sum(opinion ** 2 for opinion, _ in agentes)) / len(agentes)
     except Exception as e:
+        # Si existe algún error al calcular dicho valor, devolvemos excepción.
         raise ValueError(f"Error al calcular extremismo: {e}")
 
 
-# Función para calcular el esfuerzo de moderar las opiniones
 def calcular_esfuerzo(agentes, estrategia):
     """
     Calcula el esfuerzo necesario para moderar las opiniones de una red de agentes, basado en la estrategia dada.
+    La estrategia es una lista binaria que indica qué agentes son moderados (1) o no (0).
 
     Args:
         agentes (list of tuple): Una lista de tuplas donde cada tupla representa un agente con su opinión y receptividad.
@@ -74,13 +76,13 @@ def calcular_esfuerzo(agentes, estrategia):
         float: El esfuerzo total calculado como la suma del valor absoluto de la opinión multiplicado por 
                (1 - receptividad) para cada agente cuya estrategia sea moderar (estrategia[i] == 1).
     """
-    esfuerzo = 0
+    esfuerzo = 0 # Se inicializa el esfuerzo en 0
+    # Se recorre cada agente para calcular el esfuerzo
     for i, (opinion, receptividad) in enumerate(agentes):
-        if estrategia[i] == 1:
-            esfuerzo += abs(opinion) * (1 - receptividad)
-    return esfuerzo
+        if estrategia[i] == 1: # Si el agente es moderado
+            esfuerzo += abs(opinion) * (1 - receptividad) # Se calcula el esfuerzo según su opinión y receptividad
+    return esfuerzo # Retornamos el esfuerzo total calculado.
 
-# Algoritmo de fuerza bruta
 def fuerza_bruta_modex(agentes, R_max):
     """
     Algoritmo de fuerza bruta para encontrar la mejor estrategia de moderación
@@ -90,26 +92,28 @@ def fuerza_bruta_modex(agentes, R_max):
     :param R_max: Esfuerzo máximo permitido.
     :return: Mejor estrategia de moderación, menor extremismo, nueva red y el esfuerzo utilizado.
     """
-    n = len(agentes)
-    mejor_estrategia = None
-    mejor_extremismo = float('inf')
-    mejor_red = None
+    n = len(agentes) # Se obtiene el número de agentes
+    mejor_estrategia = None # Se inicializa la mejor estregia
+    mejor_extremismo = float('inf') # Se inicializa el menor extremismo con un valor grande
+    mejor_red = None # Se inicializa la mejor red de agentes
 
+    # Se recorre todas las posibles estrategias.
     for estrategia in product([0, 1], repeat=n):
+        # Se crea una nueva red aplicando la estrategia actual.
         nueva_red = [(0 if estrategia[i] == 1 else opinion, receptividad) 
                       for i, (opinion, receptividad) in enumerate(agentes)]
-        
+        # Se calcula el esfuerzo total de la estrategia
         esfuerzo = calcular_esfuerzo(agentes, estrategia)
-        if esfuerzo <= R_max:
-            extremismo = calcular_extremismo(nueva_red)
-            if extremismo < mejor_extremismo:
-                mejor_extremismo = extremismo
-                mejor_estrategia = estrategia
+        if esfuerzo <= R_max: # Si el esfuerzo no excede el esfuerzo máximo
+            extremismo = calcular_extremismo(nueva_red) # Se calcula el extremismo de la nueva red
+            if extremismo < mejor_extremismo: # Si se encuentra una mejor extratgia
+                mejor_extremismo = extremismo # Se acrtualiza el mejor extrmismo
+                mejor_estrategia = estrategia # Se guaarda la mejor estrategia
                 mejor_red = nueva_red  # Guardar la nueva red con la mejor estrategia
 
+    # Se retorna la mejor estrategia, el menor extremismo, la red resultante y el esfuerzo total
     return mejor_estrategia, mejor_extremismo, mejor_red, calcular_esfuerzo(agentes, mejor_estrategia)
 
-# Algoritmo de Programación Dinámica
 def calcular_esfuerzo_individual(opinion, receptividad):
     """
     Calcula el esfuerzo requerido para moderar un agente basado en su opinión y receptividad.
@@ -129,7 +133,7 @@ def programacion_dinamica_modex(agentes, R_max):
     :param R_max: Esfuerzo máximo permitido.
     :return: Estrategia óptima, menor extremismo, nueva red.
     """
-    n = len(agentes)
+    n = len(agentes) # Se inicializa el número de agentes
     # ME[i][j] = suma mínima de los cuadrados de las opiniones usando los primeros i agentes con esfuerzo j
     ME = [[float('inf')] * (R_max + 1) for _ in range(n + 1)]
     # Inicialización: sin agentes, la suma de cuadrados es 0
