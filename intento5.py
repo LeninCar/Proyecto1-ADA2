@@ -6,20 +6,6 @@ import time
 
 # Función para leer el archivo de la red social
 def leer_red_social(archivo):
-    """
-    Lee un archivo que describe una red social y extrae la información de los agentes y el esfuerzo máximo.
-
-    Args:
-        archivo (str): La ruta del archivo que contiene la información de la red social.
-
-    Returns:
-        tuple: Una tupla que contiene:
-            - agentes (list of tuple): Una lista de tuplas donde cada tupla representa un agente con su esfuerzo.
-            - esfuerzo_max (int): El esfuerzo máximo permitido.
-
-    Raises:
-        Exception: Si ocurre un error al leer el archivo, se muestra un mensaje de error y se retorna None.
-    """
     try:
         with open(archivo, 'r') as f:
             n = int(f.readline().strip())  # Número de agentes
@@ -37,36 +23,11 @@ def leer_red_social(archivo):
         return None, None
 
 def calcular_extremismo(agentes):
-    """
-    Calcula el nivel de extremismo basado en las opiniones de los agentes.
-
-    Args:
-        agentes (list of tuple): Una lista de tuplas donde cada tupla representa un agente con su opinión y esfuerzo.
-
-    Returns:
-        float: El nivel de extremismo calculado como la raíz cuadrada de la suma de los cuadrados de las opiniones, 
-               dividido entre el número total de agentes. Si la lista está vacía, retorna 0 para evitar división por cero.
-
-    Raises:
-        ValueError: Si el formato de los agentes no es válido.
-    """
     if not agentes:
         return 0  
     return math.sqrt(sum(opinion ** 2 for opinion, _ in agentes)) / len(agentes)
 
 def calcular_esfuerzo(agentes, estrategia):
-    """
-    Calcula el esfuerzo necesario para moderar las opiniones de una red de agentes, basado en la estrategia dada.
-    La estrategia es una lista binaria que indica qué agentes son moderados (1) o no (0).
-
-    Args:
-        agentes (list of tuple): Una lista de tuplas donde cada tupla representa un agente con su opinión y receptividad.
-        estrategia (list of int): Una lista de enteros (0 o 1) que indica qué agentes deben ser moderados (1 para moderar, 0 para no moderar).
-
-    Returns:
-        float: El esfuerzo total calculado como la suma del valor absoluto de la opinión multiplicado por 
-               (1 - receptividad) para cada agente cuya estrategia sea moderar (estrategia[i] == 1).
-    """
     esfuerzo = 0
     for i, (opinion, receptividad) in enumerate(agentes):
         if estrategia[i] == 1:
@@ -74,14 +35,6 @@ def calcular_esfuerzo(agentes, estrategia):
     return esfuerzo
 
 def fuerza_bruta_modex(agentes, R_max):
-    """
-    Algoritmo de fuerza bruta para encontrar la mejor estrategia de moderación
-    que minimice el extremismo dentro de un límite de esfuerzo máximo (R_max).
-
-    :param agentes: Lista de tuplas donde cada agente tiene una opinión y receptividad.
-    :param R_max: Esfuerzo máximo permitido.
-    :return: Mejor estrategia de moderación, menor extremismo, nueva red y el esfuerzo utilizado.
-    """
     n = len(agentes)
     mejor_estrategia = None
     mejor_extremismo = float('inf')
@@ -101,24 +54,9 @@ def fuerza_bruta_modex(agentes, R_max):
     return mejor_estrategia, mejor_extremismo, mejor_red, calcular_esfuerzo(agentes, mejor_estrategia)
 
 def calcular_esfuerzo_individual(opinion, receptividad):
-    """
-    Calcula el esfuerzo requerido para moderar un agente basado en su opinión y receptividad.
-    
-    :param opinion: Opinión del agente.
-    :param receptividad: Receptividad del agente.
-    :return: Esfuerzo necesario para moderar al agente.
-    """
     return math.ceil(abs(opinion) * (1 - receptividad))
 
 def programacion_dinamica_modex(agentes, R_max):
-    """
-    Algoritmo de programación dinámica para encontrar la estrategia óptima que minimice
-    el extremismo en la red dentro del esfuerzo máximo permitido.
-
-    :param agentes: Lista de agentes donde cada agente tiene una opinión y receptividad.
-    :param R_max: Esfuerzo máximo permitido.
-    :return: Estrategia óptima, menor extremismo, nueva red.
-    """
     n = len(agentes)
     ME = [[float('inf')] * (R_max + 1) for _ in range(n + 1)]
     for j in range(R_max + 1):
@@ -155,14 +93,6 @@ def programacion_dinamica_modex(agentes, R_max):
     return estrategia_optima, menor_extremismo, nueva_red
 
 def voraz_modex(agentes, R_max):
-    """
-    Algoritmo voraz para moderar a los agentes de manera que se minimice el extremismo
-    maximizando el impacto por unidad de esfuerzo.
-
-    :param agentes: Lista de agentes con opiniones y receptividad.
-    :param R_max: Esfuerzo máximo permitido.
-    :return: Estrategia óptima, menor extremismo, nueva red.
-    """
     n = len(agentes)
     impacto_por_esfuerzo = []
     for i, (opinion, receptividad) in enumerate(agentes):
@@ -192,13 +122,6 @@ def voraz_modex(agentes, R_max):
     return estrategia_optima, menor_extremismo, nueva_red
 
 def centrar_ventana(ventana, ancho, alto):
-    """
-    Centra la ventana de la aplicación en la pantalla del usuario.
-
-    :param ventana: La ventana que se va a centrar.
-    :param ancho: Ancho de la ventana.
-    :param alto: Alto de la ventana.
-    """
     pantalla_ancho = ventana.winfo_screenwidth()
     pantalla_alto = ventana.winfo_screenheight()
     x = int((pantalla_ancho / 2) - (ancho / 2))
@@ -206,10 +129,6 @@ def centrar_ventana(ventana, ancho, alto):
     ventana.geometry(f'{ancho}x{alto}+{x}+{y}')
 
 def cargar_archivo():
-    """
-    Cargar un archivo que contiene la red social y ejecutar el algoritmo seleccionado para
-    moderar los agentes.
-    """
     archivo = filedialog.askopenfilename(
         title="Selecciona el archivo de red social",
         filetypes=(("Archivos de texto", ".txt"), ("Todos los archivos", ".")))
@@ -268,8 +187,8 @@ def ejecutar_algoritmo():
         # Insertar el nombre del algoritmo ejecutado en la salida
         texto_resultados.insert(tk.END, f"Algoritmo Ejecutado: {algoritmo_ejecutado}\n")
         texto_resultados.insert(tk.END, f"Tiempo de Ejecución: {tiempo_ejecucion:.15f} segundos\n")
-        texto_resultados.insert(tk.END, f"Extremismo: {menor_extremismo:.3f}\n")
-        texto_resultados.insert(tk.END, f"Esfuerzo: {esfuerzo_total}\n\n")
+        texto_resultados.insert(tk.END, f"Menor Extremismo Alcanzado: {menor_extremismo:.3f}\n")
+        texto_resultados.insert(tk.END, f"Esfuerzo Utilizado: {esfuerzo_total}\n\n")
         
         texto_resultados.insert(tk.END, "Mejor Estrategia:\n")
         texto_resultados.insert(tk.END, f"{mejor_estrategia}\n")
@@ -279,18 +198,15 @@ def ejecutar_algoritmo():
             estado = "Moderado" if mejor_estrategia[idx] else "No moderado"
             texto_resultados.insert(tk.END, f"Agente {idx}: Opinión = {op}, Receptividad = {rec} ({estado})\n")
 
-        # Guardar los resultados para exportarlos más tarde
+        # Actualizar variables para la exportación
         ventana.agentes_moderados_final = agentes_moderados_final
         ventana.mejor_estrategia = mejor_estrategia
-        ventana.menor_extremismo = menor_extremismo
-        ventana.esfuerzo_total = esfuerzo_total
 
         # Habilitar el botón de exportación
         boton_exportar.config(state=tk.NORMAL)
 
 
-
-def exportar_txt(mejor_estrategia, menor_extremismo, esfuerzo_total):
+def exportar_txt(agentes_moderados_final, mejor_estrategia):
     archivo_guardado = filedialog.asksaveasfilename(
         defaultextension=".txt",
         filetypes=[("Archivos de texto", "*.txt"), ("Todos los archivos", "*.*")])
@@ -298,21 +214,14 @@ def exportar_txt(mejor_estrategia, menor_extremismo, esfuerzo_total):
     if archivo_guardado:
         try:
             with open(archivo_guardado, 'w') as f:
-                # Escribir el extremismo de la red una vez moderada
-                f.write(f"Ext {menor_extremismo:.3f}\n")
-                
-                # Escribir el esfuerzo total para llevar a cabo la estrategia
-                f.write(f"Esf {esfuerzo_total:.3f}\n")
-                
-                # Escribir si cada agente fue moderado o no, según la estrategia óptima
-                for idx, moderado in enumerate(mejor_estrategia):
-                    f.write(f"mod{idx} {moderado}\n")
-                    
+                f.write("Agentes Moderados y Estrategia Óptima\n")
+                f.write("--------------------------------------\n")
+                for idx, (op, rec) in enumerate(agentes_moderados_final):
+                    estado = "Moderado" if mejor_estrategia[idx] == 1 else "No moderado"
+                    f.write(f"Agente {idx}: Opinión = {op}, Receptividad = {rec}, Estado = {estado}\n")
             messagebox.showinfo("Exportación exitosa", f"El archivo ha sido guardado en: {archivo_guardado}")
         except Exception as e:
             messagebox.showerror("Error", f"Error al exportar el archivo: {e}")
-
-
 
 # Crear la ventana principal
 ventana = tk.Tk()
@@ -345,19 +254,7 @@ boton_cargar.pack(side=tk.LEFT, padx=10)
 boton_ejecutar = ttk.Button(frame_boton, text="Ejecutar", command=ejecutar_algoritmo, width=20, style="TButton", state=tk.DISABLED)
 boton_ejecutar.pack(side=tk.LEFT, padx=10)
 
-boton_exportar = ttk.Button(
-    frame_boton, 
-    text="Exportar a TXT", 
-    command=lambda: exportar_txt(
-        ventana.mejor_estrategia, 
-        ventana.menor_extremismo, 
-        ventana.esfuerzo_total
-    ), 
-    width=20, 
-    style="TButton", 
-    state=tk.DISABLED
-)
-
+boton_exportar = ttk.Button(frame_boton, text="Exportar a TXT", command=lambda: exportar_txt(ventana.agentes_moderados_final, ventana.mejor_estrategia), width=20, style="TButton", state=tk.DISABLED)
 boton_exportar.pack(side=tk.LEFT, padx=10)
 
 ventana.grid_rowconfigure(1, weight=1)
