@@ -73,32 +73,41 @@ def calcular_esfuerzo(agentes, estrategia):
             esfuerzo += abs(opinion) * (1 - receptividad)
     return esfuerzo
 
-def fuerza_bruta_modex(agentes, R_max):
+def modexFB(agentes, R_max):
     """
     Algoritmo de fuerza bruta para encontrar la mejor estrategia de moderación
     que minimice el extremismo dentro de un límite de esfuerzo máximo (R_max).
 
     :param agentes: Lista de tuplas donde cada agente tiene una opinión y receptividad.
     :param R_max: Esfuerzo máximo permitido.
-    :return: Mejor estrategia de moderación, menor extremismo, nueva red y el esfuerzo utilizado.
+    :return: Mejor estrategia de moderación, menor extremismo y el esfuerzo utilizado.
     """
     n = len(agentes)
-    mejor_estrategia = None
+    E = None
     mejor_extremismo = float('inf')
     mejor_red = None
 
     for estrategia in product([0, 1], repeat=n):
-        nueva_red = [(0 if estrategia[i] == 1 else opinion, receptividad) 
-                      for i, (opinion, receptividad) in enumerate(agentes)]
+        nueva_red = mod(agentes, estrategia)
         esfuerzo = calcular_esfuerzo(agentes, estrategia)
         if esfuerzo <= R_max:
             extremismo = calcular_extremismo(nueva_red)
             if extremismo < mejor_extremismo:
                 mejor_extremismo = extremismo
-                mejor_estrategia = estrategia
-                mejor_red = nueva_red
+                E = estrategia
+                mejor_red = nueva_red 
+    return E, mejor_extremismo, calcular_esfuerzo(agentes, E), mejor_red
 
-    return mejor_estrategia, mejor_extremismo, mejor_red, calcular_esfuerzo(agentes, mejor_estrategia)
+def mod(agentes, estrategia):
+    """
+    Modera a los agentes de acuerdo a una estrategia dada. RS'
+
+    :param agentes: Lista de agentes con opiniones y receptividad.
+    :param estrategia: Estrategia de moderación para los agentes.
+    :return: Nueva red de agentes moderados.
+    """
+    return [(0 if estrategia[i] == 1 else opinion, receptividad) 
+            for i, (opinion, receptividad) in enumerate(agentes)]
 
 def calcular_esfuerzo_individual(opinion, receptividad):
     """
@@ -110,14 +119,14 @@ def calcular_esfuerzo_individual(opinion, receptividad):
     """
     return math.ceil(abs(opinion) * (1 - receptividad))
 
-def programacion_dinamica_modex(agentes, R_max):
+def modexPD(agentes, R_max):
     """
     Algoritmo de programación dinámica para encontrar la estrategia óptima que minimice
     el extremismo en la red dentro del esfuerzo máximo permitido.
 
     :param agentes: Lista de agentes donde cada agente tiene una opinión y receptividad.
     :param R_max: Esfuerzo máximo permitido.
-    :return: Estrategia óptima, menor extremismo, nueva red.
+    :return Mejor estrategia de moderación, menor extremismo y el esfuerzo utilizado.
     """
     n = len(agentes)
     ME = [[float('inf')] * (R_max + 1) for _ in range(n + 1)]
@@ -146,22 +155,22 @@ def programacion_dinamica_modex(agentes, R_max):
         else:
             estrategia_optima[i - 1] = 0
 
-    nueva_red = [(0 if estrategia_optima[i] == 1 else opinion, receptividad) 
-                  for i, (opinion, receptividad) in enumerate(agentes)]
+    nueva_red = mod(agentes, estrategia_optima)
 
     suma_cuadrados = ME[n][R_max]
     menor_extremismo = math.sqrt(suma_cuadrados) / n
+    E= estrategia_optima
+    return E, menor_extremismo, calcular_esfuerzo(agentes, estrategia_optima), nueva_red
 
-    return estrategia_optima, menor_extremismo, nueva_red
 
-def voraz_modex(agentes, R_max):
+def modexV(agentes, R_max):
     """
     Algoritmo voraz para moderar a los agentes de manera que se minimice el extremismo
     maximizando el impacto por unidad de esfuerzo.
 
     :param agentes: Lista de agentes con opiniones y receptividad.
     :param R_max: Esfuerzo máximo permitido.
-    :return: Estrategia óptima, menor extremismo, nueva red.
+    return: Mejor estrategia de moderación, menor extremismo y el esfuerzo utilizado.
     """
     n = len(agentes)
     impacto_por_esfuerzo = []
@@ -175,21 +184,20 @@ def voraz_modex(agentes, R_max):
     
     esfuerzo_usado = 0
     suma_cuadrados = 0
-    estrategia_optima = [0] * n
+    E = [0] * n
     
     for impacto_por_esf, esfuerzo, impacto, i in impacto_por_esfuerzo:
         if esfuerzo_usado + esfuerzo <= R_max:
-            estrategia_optima[i] = 1
+            E[i] = 1
             esfuerzo_usado += esfuerzo
         else:
             suma_cuadrados += impacto
     
-    nueva_red = [(0 if estrategia_optima[i] == 1 else opinion, receptividad) 
-                  for i, (opinion, receptividad) in enumerate(agentes)]
+    nueva_red = mod(agentes, E)
     
     menor_extremismo = math.sqrt(suma_cuadrados) / n
     
-    return estrategia_optima, menor_extremismo, nueva_red
+    return E, menor_extremismo, calcular_esfuerzo(agentes, E), nueva_red
 
 def centrar_ventana(ventana, ancho, alto):
     """
@@ -243,21 +251,17 @@ def ejecutar_algoritmo():
         if metodo.get() == "Fuerza Bruta":
             algoritmo_ejecutado = "Fuerza Bruta"
             tiempo_inicio = time.time()
-            mejor_estrategia, menor_extremismo, agentes_moderados_final, esfuerzo_total = fuerza_bruta_modex(agentes, esfuerzo_max)
+            E, menor_extremismo, esfuerzo, agentes_moderados_final = modexFB(agentes, esfuerzo_max)
+
         elif metodo.get() == "Programación Dinámica":
             algoritmo_ejecutado = "Programación Dinámica"
             tiempo_inicio = time.time()
-            mejor_estrategia, menor_extremismo, agentes_moderados_final = programacion_dinamica_modex(agentes, esfuerzo_max)
-            esfuerzo_total = sum(
-                calcular_esfuerzo_individual(agentes[i][0], agentes[i][1]) for i in range(len(agentes)) if mejor_estrategia[i] == 1
-            )
+            E, menor_extremismo, esfuerzo, agentes_moderados_final = modexPD(agentes, esfuerzo_max)
         elif metodo.get() == "Voraz":
             algoritmo_ejecutado = "Algoritmo Voraz"
             tiempo_inicio = time.time()
-            mejor_estrategia, menor_extremismo, agentes_moderados_final = voraz_modex(agentes, esfuerzo_max)
-            esfuerzo_total = sum(
-                calcular_esfuerzo_individual(agentes[i][0], agentes[i][1]) for i in range(len(agentes)) if mejor_estrategia[i] == 1
-            )
+            E, menor_extremismo, esfuerzo, agentes_moderados_final = modexV(agentes, esfuerzo_max)
+
 
         tiempo_fin = time.time()
         tiempo_ejecucion = tiempo_fin - tiempo_inicio
@@ -269,28 +273,28 @@ def ejecutar_algoritmo():
         texto_resultados.insert(tk.END, f"Algoritmo Ejecutado: {algoritmo_ejecutado}\n")
         texto_resultados.insert(tk.END, f"Tiempo de Ejecución: {tiempo_ejecucion:.15f} segundos\n")
         texto_resultados.insert(tk.END, f"Extremismo: {menor_extremismo:.3f}\n")
-        texto_resultados.insert(tk.END, f"Esfuerzo: {esfuerzo_total}\n\n")
+        texto_resultados.insert(tk.END, f"Esfuerzo: {esfuerzo}\n\n")
         
         texto_resultados.insert(tk.END, "Mejor Estrategia:\n")
-        texto_resultados.insert(tk.END, f"{mejor_estrategia}\n")
+        texto_resultados.insert(tk.END, f"{E}\n")
 
         texto_resultados.insert(tk.END, f"\nAgentes Moderados:\n")
         for idx, (op, rec) in enumerate(agentes_moderados_final):
-            estado = "Moderado" if mejor_estrategia[idx] else "No moderado"
+            estado = "Moderado" if E[idx] else "No moderado"
             texto_resultados.insert(tk.END, f"Agente {idx}: Opinión = {op}, Receptividad = {rec} ({estado})\n")
 
         # Guardar los resultados para exportarlos más tarde
         ventana.agentes_moderados_final = agentes_moderados_final
-        ventana.mejor_estrategia = mejor_estrategia
+        ventana.E = E
         ventana.menor_extremismo = menor_extremismo
-        ventana.esfuerzo_total = esfuerzo_total
+        ventana.esfuerzo = esfuerzo
 
         # Habilitar el botón de exportación
         boton_exportar.config(state=tk.NORMAL)
 
 
 
-def exportar_txt(mejor_estrategia, menor_extremismo, esfuerzo_total):
+def exportar_txt(E, menor_extremismo, esfuerzo):
     archivo_guardado = filedialog.asksaveasfilename(
         defaultextension=".txt",
         filetypes=[("Archivos de texto", "*.txt"), ("Todos los archivos", "*.*")])
@@ -299,14 +303,15 @@ def exportar_txt(mejor_estrategia, menor_extremismo, esfuerzo_total):
         try:
             with open(archivo_guardado, 'w') as f:
                 # Escribir el extremismo de la red una vez moderada
-                f.write(f"Ext {menor_extremismo:.3f}\n")
+                f.write(f"{menor_extremismo:.3f}\n")
                 
                 # Escribir el esfuerzo total para llevar a cabo la estrategia
-                f.write(f"Esf {esfuerzo_total:.3f}\n")
+                f.write(f"{esfuerzo:.3f}\n")
                 
                 # Escribir si cada agente fue moderado o no, según la estrategia óptima
-                for idx, moderado in enumerate(mejor_estrategia):
-                    f.write(f"mod{idx} {moderado}\n")
+                for moderado in enumerate(E):
+                    print(moderado)
+                    f.write(f"{'Moderado' if moderado[1] == 1 else 'No Moderado'}\n")
                     
             messagebox.showinfo("Exportación exitosa", f"El archivo ha sido guardado en: {archivo_guardado}")
         except Exception as e:
@@ -323,42 +328,75 @@ centrar_ventana(ventana, ancho_ventana, alto_ventana)
 ventana.resizable(True, True)
 ventana.configure(bg='#ffffff')
 
-# Crear un estilo común para los botones usando ttk
-estilo_botones = ttk.Style()
-estilo_botones.configure("TButton", font=("Arial", 12), padding=10)
+# Definir un estilo personalizado
+style = ttk.Style()
 
-frame_boton = tk.Frame(ventana, bg='#f4f4f9', bd=2, relief=tk.GROOVE)
-frame_boton.grid(row=0, column=0, pady=20, padx=10)
+# Cambiar el tema a 'clam' para permitir más personalización
+style.theme_use('clam')
+
+# Configurar el estilo personalizado para el botón
+style.configure("Custom.TButton",
+                foreground="white",            # Color del texto
+                font=('Helvetica', 10, 'bold'), # Texto en negrilla
+                borderwidth=2,                  # Grosor del borde
+                relief="solid")                 # Tipo de borde (puedes probar con 'groove' o 'ridge')
+
+# Usar el método `map` para cambiar el color de fondo y del borde según el estado
+style.map("Custom.TButton",
+          background=[('active', '#3964c0'), ('!active', '#3964c0')],  # Color de fondo
+          bordercolor=[('active', '#2c3e90'), ('!active', '#2c3e90')]) # Color del borde (azul más oscuro)
+
+# Crear el frame sin definir un ancho fijo para que se expanda
+frame_boton = tk.Frame(ventana, bg='#5d83d3', bd=2, relief=tk.GROOVE)
+frame_boton.grid(row=0, column=0, sticky="ew")  # sticky="ew" para que se expanda horizontalmente
+
+# Crear un título centrado con texto blanco y negrilla
+titulo = tk.Label(frame_boton, text="Modex", bg='#5d83d3', fg="white",  font=("Arial", 30, "bold"))
+titulo.grid(row=0, column=0, columnspan=5, pady=10)
+
+
 
 metodo = tk.StringVar(value="Programación Dinámica")
-etiqueta_metodo = tk.Label(frame_boton, text="Método de Resolución:", bg='#f4f4f9', font=("Arial", 12))
-etiqueta_metodo.pack(side=tk.LEFT, padx=10)
+etiqueta_metodo = tk.Label(frame_boton, text="Método de Resolución:", bg='#5d83d3', font=("Arial", 12, "bold"), fg="white")
+
 
 opciones_metodo = ttk.Combobox(frame_boton, textvariable=metodo, 
                                values=["Fuerza Bruta", "Programación Dinámica", "Voraz"],
                                state='readonly', font=("Arial", 12), width=20)
-opciones_metodo.pack(side=tk.LEFT, padx=10)
 
-boton_cargar = ttk.Button(frame_boton, text="Cargar Archivo", command=cargar_archivo, width=20, style="TButton")
-boton_cargar.pack(side=tk.LEFT, padx=10)
 
-boton_ejecutar = ttk.Button(frame_boton, text="Ejecutar", command=ejecutar_algoritmo, width=20, style="TButton", state=tk.DISABLED)
-boton_ejecutar.pack(side=tk.LEFT, padx=10)
+boton_cargar = ttk.Button(frame_boton, text="Cargar Archivo", command=cargar_archivo, width=20, style="Custom.TButton")
+
+
+boton_ejecutar = ttk.Button(frame_boton, text="Moderar", command=ejecutar_algoritmo, width=20, style="Custom.TButton", state=tk.DISABLED)
+
 
 boton_exportar = ttk.Button(
     frame_boton, 
     text="Exportar a TXT", 
     command=lambda: exportar_txt(
-        ventana.mejor_estrategia, 
+        ventana.E, 
         ventana.menor_extremismo, 
-        ventana.esfuerzo_total
+        ventana.esfuerzo
     ), 
     width=20, 
-    style="TButton", 
+    style="Custom.TButton",
     state=tk.DISABLED
 )
+# Colocar los widgets en una fila utilizando grid
+etiqueta_metodo.grid(row=1, column=0, padx=10, pady=10)
+opciones_metodo.grid(row=1, column=1, padx=10, pady=10)
+boton_cargar.grid(row=1, column=2, padx=10, pady=10)
+boton_ejecutar.grid(row=1, column=3, padx=10, pady=10)
+boton_exportar.grid(row=1, column=4, padx=10, pady=10)
 
-boton_exportar.pack(side=tk.LEFT, padx=10)
+# Configurar las columnas del frame para que se centren horizontalmente
+frame_boton.grid_columnconfigure(0, weight=1)
+frame_boton.grid_columnconfigure(1, weight=1)
+frame_boton.grid_columnconfigure(2, weight=1)
+frame_boton.grid_columnconfigure(3, weight=1)
+frame_boton.grid_columnconfigure(4, weight=1)
+
 
 ventana.grid_rowconfigure(1, weight=1)
 ventana.grid_rowconfigure(2, weight=1)
@@ -367,7 +405,7 @@ ventana.grid_columnconfigure(0, weight=1)
 frame_texto = tk.Frame(ventana, bg='#5d83d3', bd=2, relief=tk.GROOVE)
 frame_texto.grid(row=1, column=0, sticky='nsew', padx=10, pady=10)
 
-etiqueta_archivo = tk.Label(frame_texto, text="Contenido del Archivo:", bg='#5d83d3', font=("Arial", 12))
+etiqueta_archivo = tk.Label(frame_texto, text="Contenido del Archivo:", bg='#5d83d3',fg="white", font=("Arial", 12, "bold"))
 etiqueta_archivo.grid(row=0, column=0, sticky='w', padx=5)
 
 texto_principal = tk.Text(frame_texto, wrap=tk.WORD, font=("Courier New", 10), bg='#ffffff')
@@ -383,7 +421,7 @@ frame_texto.grid_columnconfigure(0, weight=1)
 frame_resultados = tk.Frame(ventana, bg='#5d83d3', bd=2, relief=tk.GROOVE)
 frame_resultados.grid(row=2, column=0, sticky='nsew', padx=10, pady=10)
 
-etiqueta_resultados = tk.Label(frame_resultados, text="Resultados de la Moderación:", bg='#5d83d3', font=("Arial", 12))
+etiqueta_resultados = tk.Label(frame_resultados, text="Resultados de la Moderación:", bg='#5d83d3', fg="white", font=("Arial", 12, "bold"))
 etiqueta_resultados.grid(row=0, column=0, sticky='w', padx=5)
 
 texto_resultados = tk.Text(frame_resultados, wrap=tk.WORD, font=("Courier New", 10), bg='#ffffff')
