@@ -70,7 +70,7 @@ def calcular_esfuerzo(agentes, estrategia):
     esfuerzo = 0
     for i, (opinion, receptividad) in enumerate(agentes):
         if estrategia[i] == 1:
-            esfuerzo += abs(opinion) * (1 - receptividad)
+            esfuerzo += math.ceil(abs(opinion) * (1 - receptividad))
     return esfuerzo
 
 def modexFB(agentes, R_max):
@@ -93,6 +93,7 @@ def modexFB(agentes, R_max):
         if esfuerzo <= R_max:
             extremismo = calcular_extremismo(nueva_red)
             if extremismo < mejor_extremismo:
+                print(extremismo, estrategia)
                 mejor_extremismo = extremismo
                 E = estrategia
                 mejor_red = nueva_red 
@@ -129,6 +130,18 @@ def modexPD(agentes, R_max):
     :return Mejor estrategia de moderación, menor extremismo y el esfuerzo utilizado.
     """
     n = len(agentes)
+    
+    esfuerzo_total_para_moderar_todo = sum(calcular_esfuerzo_individual(opinion, receptividad) for opinion, receptividad in agentes)
+
+    if esfuerzo_total_para_moderar_todo <= R_max:
+        estrategia_optima = [1] * n
+        nueva_red = mod(agentes, estrategia_optima)
+        menor_extremismo = calcular_extremismo(nueva_red)
+        return estrategia_optima, menor_extremismo, esfuerzo_total_para_moderar_todo, nueva_red
+
+    # Si el esfuerzo total es mayor que R_max, entonces procedemos con la programación dinámica.
+    
+    # Crear la matriz de tamaño (n+1) x (R_max+1)
     ME = [[float('inf')] * (R_max + 1) for _ in range(n + 1)]
     for j in range(R_max + 1):
         ME[0][j] = 0
@@ -159,10 +172,7 @@ def modexPD(agentes, R_max):
 
     suma_cuadrados = ME[n][R_max]
     menor_extremismo = math.sqrt(suma_cuadrados) / n
-    E= estrategia_optima
-    return E, menor_extremismo, calcular_esfuerzo(agentes, estrategia_optima), nueva_red
-
-
+    return estrategia_optima, menor_extremismo, calcular_esfuerzo(agentes, estrategia_optima), nueva_red
 def modexV(agentes, R_max):
     """
     Algoritmo voraz para moderar a los agentes de manera que se minimice el extremismo
@@ -408,7 +418,7 @@ frame_texto.grid(row=1, column=0, sticky='nsew', padx=10, pady=10)
 etiqueta_archivo = tk.Label(frame_texto, text="Contenido del Archivo:", bg='#5d83d3',fg="white", font=("Arial", 12, "bold"))
 etiqueta_archivo.grid(row=0, column=0, sticky='w', padx=5)
 
-texto_principal = tk.Text(frame_texto, wrap=tk.WORD, font=("Courier New", 10), bg='#ffffff')
+texto_principal = tk.Text(frame_texto, wrap=tk.WORD, font=("Courier New", 10), fg="black", bg='#ffffff')
 texto_principal.grid(row=1, column=0, sticky='nsew', padx=5)
 
 scrollbar_texto = tk.Scrollbar(frame_texto, command=texto_principal.yview)
@@ -424,7 +434,7 @@ frame_resultados.grid(row=2, column=0, sticky='nsew', padx=10, pady=10)
 etiqueta_resultados = tk.Label(frame_resultados, text="Resultados de la Moderación:", bg='#5d83d3', fg="white", font=("Arial", 12, "bold"))
 etiqueta_resultados.grid(row=0, column=0, sticky='w', padx=5)
 
-texto_resultados = tk.Text(frame_resultados, wrap=tk.WORD, font=("Courier New", 10), bg='#ffffff')
+texto_resultados = tk.Text(frame_resultados, wrap=tk.WORD,fg="black", font=("Courier New", 10), bg='#ffffff')
 texto_resultados.grid(row=1, column=0, sticky='nsew', padx=5)
 
 scrollbar_resultados = tk.Scrollbar(frame_resultados, command=texto_resultados.yview)
