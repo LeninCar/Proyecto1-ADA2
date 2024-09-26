@@ -319,10 +319,10 @@ def exportar_txt(E, menor_extremismo, esfuerzo):
                 f.write(f"{esfuerzo:.3f}\n")
                 
                 # Escribir si cada agente fue moderado o no, según la estrategia óptima
-                for moderado in enumerate(E):
+                for idx, moderado in enumerate(E):
                     print(moderado)
-                    f.write(f"{'Moderado' if moderado[1] == 1 else 'No Moderado'}\n")
-                    
+                    f.write(f"Agente {idx}: {'Moderado' if moderado == 1 else 'No Moderado'}\n")
+
             messagebox.showinfo("Exportación exitosa", f"El archivo ha sido guardado en: {archivo_guardado}")
         except Exception as e:
             messagebox.showerror("Error", f"Error al exportar el archivo: {e}")
