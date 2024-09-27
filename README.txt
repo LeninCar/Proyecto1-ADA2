@@ -9,7 +9,7 @@ Instalación:
 
 2. Crea un entorno virtual:
    python -m venv venv
-   source venv/bin/activate  # En Windows usa: venv\Scripts\actívate
+   source venv/bin/activate  # En Windows usa: venv\Scripts\activate
 
 
 3. Instala las dependencias necesarias (si hay alguna especificada en un archivo requirements.txt).
